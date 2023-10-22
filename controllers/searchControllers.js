@@ -1,9 +1,22 @@
 const puppeteer = require('puppeteer');
+require("dotenv").config();
 
 const searchProduct = async (req,res)=>{
+    const browser = await puppeteer.launch({
+        args: [
+          "--disable-setuid-sandbox",
+          "--no-sandbox",
+          "--single-process",
+          "--no-zygote",
+        ],
+        executablePath:
+          process.env.NODE_ENV === "production"
+            ? process.env.PUPPETEER_EXECUTABLE_PATH
+            : puppeteer.executablePath(),
+      });
+
     try {
         const {item} = req.body
-        const browser = await puppeteer.launch();
         const page = await browser.newPage();
         await page.goto(`https://www.google.com/search?q=${item}&tbm=shop`);
 
@@ -14,11 +27,12 @@ const searchProduct = async (req,res)=>{
             image: e.querySelector('img').getAttribute('src')
             }))
         );
-        await browser.close();
         res.status(200).send(products[0]);
     } catch (error) {
         res.status(500).json(error.message)
         console.log(error);
+    } finally{
+        await browser.close();
     }
 }
 
